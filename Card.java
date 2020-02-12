@@ -1,12 +1,15 @@
 package flashcards;
 
 
-import java.util.Map;
-import java.util.Scanner;
-import java.util.TreeMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+
 
 public class Card {
-    Map<String, String> cards = new TreeMap<>();
+    private Map<String, String> cards = new TreeMap<>();
     Scanner scanner = new Scanner(System.in);
 
     public void playGame() {
@@ -20,40 +23,53 @@ public class Card {
                     addCard();
                     break;
                 case "remove":
-                    // remove a cerd
+                    removeCard();
+                    break;
                 case "import":
-                    // imoprt file
+                    importCard();
+                    break;
                 case "export":
-                    // save file
+                    exportCard();
+                    break;
                 case "ask":
                     gamePlay();
+                    break;
 
             }
         } while (!action.equals("exit"));
-
+        System.out.println("Bye bye!");
     }
 
     public void addCard() {
         String term;
         String definition;
 
-
         System.out.println("The card :");
-        do {
-            term = scanner.nextLine();
-            if (isContainsKey(term)) {
-                System.out.printf("The card \"%s\" already exists. Try again:%n", term);
-            }
-        } while (isContainsKey(term));
-
+        term = scanner.nextLine();
+        if (isContainsKey(term)) {
+            System.out.printf("The card \"%s\" already exists.%n", term);
+            return;
+        }
         System.out.println("The definition of the card :");
-        do {
-            definition = scanner.nextLine();
-            if (isContainsDef(definition)) {
-                System.out.printf("The definition \"%s\" already exists. Try again:%n", definition);
-            }
-        } while (cards.containsValue(definition));
+        definition = scanner.nextLine();
+        if (isContainsDef(definition)) {
+            System.out.printf("The definition \"%s\" already exists.%n", definition);
+            return;
+        }
         cards.put(term, definition);
+        System.out.printf("The pair (\"%s\":\"%s\") has been added.%n", term, definition);
+    }
+
+    public void removeCard() {
+        String term;
+        System.out.println("The card:");
+        term = scanner.nextLine();
+        if (isContainsKey(term)) {
+            cards.remove(term);
+            System.out.println("The card has been removed.");
+        } else {
+            System.out.printf("Can't remove \"%s\", there is no such card.%n", term);
+        }
     }
 
 
@@ -80,37 +96,74 @@ public class Card {
 
     public void gamePlay() {
         String answer;
+        String randomKey;
+        String randomValue;
         int quantity;
 
-        do {
-            while (true) {
-                try {
-                    System.out.println("How many times to ask?");
-                    quantity = scanner.nextInt();
-                    break;
-                } catch (Exception e) {
-                    System.out.println("ERROR: Enter only whole numbers! Try again!");
-                } finally {
-                    scanner.nextLine();
-                }
-            }
-            if (quantity > cards.size()) {
-                System.out.printf("ERROR: %s times is more than %s cards! Try again!%n" , quantity , cards.size());
-            }
-        } while (quantity > cards.size());
+        System.out.println("How many times to ask?");
+        try {
+            quantity = scanner.nextInt();
+        } catch (InputMismatchException e) {
+            System.out.println("ERROR: Wrong input");
+            return;
+        }
 
+        scanner.nextLine();
+        List<String> keys = new ArrayList<>(cards.keySet());
 
-        for (var entry : cards.entrySet()) {
-            System.out.printf("Print definition of \"%s\":%n", entry.getKey());
+        for (int i = 0; i < quantity; i++) {
+            Random random = new Random();
+
+            randomKey = keys.get(random.nextInt(keys.size()));
+            randomValue = cards.get(randomKey);
+
+            System.out.printf("Print definition of \"%s\":%n", randomKey);
             answer = scanner.nextLine();
-            if (!entry.getValue().equals(answer) && cards.containsValue(answer)) {
+            if (!randomValue.equals(answer) && cards.containsValue(answer)) {
                 System.out.printf("Wrong answer. The correct one is \"%s\", you've just written the definition of \"%s\".%n"
-                        , entry.getValue(), getKeyFromMap(cards, answer));
-            } else if (entry.getValue().equals(answer)) {
+                        , randomValue, getKeyFromMap(cards, answer));
+            } else if (randomValue.equals(answer)) {
                 System.out.println("Correct answer.");
             } else {
-                System.out.printf("Wrong answer. The correct one is \"%s\".%n", entry.getValue());
+                System.out.printf("Wrong answer. The correct one is \"%s\".%n", randomValue);
             }
+        }
+    }
+
+    public void exportCard() {
+        String fileName;
+        System.out.println("File name:");
+        fileName = scanner.nextLine();
+        File file = new File(fileName);
+        try (PrintWriter printWriter = new PrintWriter(file)) {
+            for (var entry : cards.entrySet()) {
+                printWriter.println(entry.getKey());
+                printWriter.println(entry.getValue());
+            }
+        } catch (IOException e) {
+            System.out.printf("ERROR: An exception occurs %s", e.getMessage());
+        }
+        System.out.printf("%d cards have been saved.%n", cards.size());
+    }
+
+    public void importCard() {
+        String fileName;
+        System.out.println("File name:");
+        fileName = scanner.nextLine();
+        File file = new File(fileName);
+        int count = 0;
+
+        try (Scanner scanner = new Scanner(file)) {
+            while (scanner.hasNext()) {
+                cards.put(scanner.nextLine(), scanner.nextLine());
+                count++;
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found: " + fileName);
+
+        }
+        if (count > 0) {
+            System.out.printf("%d cards have been loaded.%n", count);
         }
     }
 }
