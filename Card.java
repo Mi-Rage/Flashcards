@@ -10,13 +10,18 @@ import java.util.*;
 
 public class Card {
     private Map<String, String> cards = new TreeMap<>();
+    private ArrayList<String> log = new ArrayList<>();
+    StringBuilder stringBuilder = new StringBuilder();
     Scanner scanner = new Scanner(System.in);
+
 
     public void playGame() {
         String action;
         do {
-            System.out.println("Input the action (add, remove, import, export, ask, exit):");
+            stringBuilder.append("Input the action (add, remove, import, export, ask, exit):");
+            printLog(stringBuilder, log);
             action = scanner.next();
+            log.add(action);
             scanner.nextLine();
             switch (action) {
                 case "add":
@@ -34,42 +39,57 @@ public class Card {
                 case "ask":
                     gamePlay();
                     break;
+                case "log":
+                    saveLog();
+                    break;
 
             }
         } while (!action.equals("exit"));
         System.out.println("Bye bye!");
     }
 
+
+
     public void addCard() {
         String term;
         String definition;
 
-        System.out.println("The card :");
+        stringBuilder.append("The card :");
+        printLog(stringBuilder, log);
         term = scanner.nextLine();
+        log.add(term);
         if (isContainsKey(term)) {
-            System.out.printf("The card \"%s\" already exists.%n", term);
+            stringBuilder.append("The card \"").append(term).append("\" already exists.");
+            printLog(stringBuilder, log);
             return;
         }
-        System.out.println("The definition of the card :");
+        stringBuilder.append("The definition of the card :");
+        printLog(stringBuilder, log);
         definition = scanner.nextLine();
+        log.add(definition);
         if (isContainsDef(definition)) {
-            System.out.printf("The definition \"%s\" already exists.%n", definition);
+            stringBuilder.append("The definition \"").append(definition).append("\" already exists.");
+            printLog(stringBuilder, log);
             return;
         }
         cards.put(term, definition);
-        System.out.printf("The pair (\"%s\":\"%s\") has been added.%n", term, definition);
+        stringBuilder.append("The pair (\"").append(term).append("\":\"").append(definition).append("\") has been added.");
+        printLog(stringBuilder, log);
     }
 
     public void removeCard() {
         String term;
-        System.out.println("The card:");
+        stringBuilder.append("The card:");
+        printLog(stringBuilder, log);
         term = scanner.nextLine();
+        log.add(term);
         if (isContainsKey(term)) {
             cards.remove(term);
-            System.out.println("The card has been removed.");
+            stringBuilder.append("The card has been removed.");
         } else {
-            System.out.printf("Can't remove \"%s\", there is no such card.%n", term);
+            stringBuilder.append("Can't remove \"").append(term).append("\", there is no such card.");
         }
+        printLog(stringBuilder, log);
     }
 
 
@@ -100,11 +120,13 @@ public class Card {
         String randomValue;
         int quantity;
 
-        System.out.println("How many times to ask?");
+        stringBuilder.append("How many times to ask?");
+        printLog(stringBuilder, log);
         try {
             quantity = scanner.nextInt();
         } catch (InputMismatchException e) {
-            System.out.println("ERROR: Wrong input");
+            stringBuilder.append("ERROR: Wrong input");
+            printLog(stringBuilder, log);
             return;
         }
 
@@ -117,23 +139,27 @@ public class Card {
             randomKey = keys.get(random.nextInt(keys.size()));
             randomValue = cards.get(randomKey);
 
-            System.out.printf("Print definition of \"%s\":%n", randomKey);
+            stringBuilder.append("Print definition of \"").append(randomKey).append("\":");
+            printLog(stringBuilder, log);
             answer = scanner.nextLine();
+            log.add(answer);
             if (!randomValue.equals(answer) && cards.containsValue(answer)) {
-                System.out.printf("Wrong answer. The correct one is \"%s\", you've just written the definition of \"%s\".%n"
-                        , randomValue, getKeyFromMap(cards, answer));
+                stringBuilder.append("Wrong answer. The correct one is \"").append(randomValue).append("\", you've just written the definition of \"").append(getKeyFromMap(cards, answer)).append("\".");
             } else if (randomValue.equals(answer)) {
-                System.out.println("Correct answer.");
+                stringBuilder.append("Correct answer.");
             } else {
-                System.out.printf("Wrong answer. The correct one is \"%s\".%n", randomValue);
+                stringBuilder.append("Wrong answer. The correct one is \"").append(randomValue).append("\".");
             }
+            printLog(stringBuilder, log);
         }
     }
 
     public void exportCard() {
         String fileName;
-        System.out.println("File name:");
+        stringBuilder.append("File name:");
+        printLog(stringBuilder, log);
         fileName = scanner.nextLine();
+        log.add(fileName);
         File file = new File(fileName);
         try (PrintWriter printWriter = new PrintWriter(file)) {
             for (var entry : cards.entrySet()) {
@@ -141,15 +167,19 @@ public class Card {
                 printWriter.println(entry.getValue());
             }
         } catch (IOException e) {
-            System.out.printf("ERROR: An exception occurs %s", e.getMessage());
+            stringBuilder.append("ERROR: An exception occurs ").append(e.getMessage());
+            printLog(stringBuilder, log);
         }
-        System.out.printf("%d cards have been saved.%n", cards.size());
+        stringBuilder.append(cards.size()).append(" cards have been saved.");
+        printLog(stringBuilder, log);
     }
 
     public void importCard() {
         String fileName;
-        System.out.println("File name:");
+        stringBuilder.append("File name:");
+        printLog(stringBuilder, log);
         fileName = scanner.nextLine();
+        log.add(fileName);
         File file = new File(fileName);
         int count = 0;
 
@@ -159,11 +189,33 @@ public class Card {
                 count++;
             }
         } catch (FileNotFoundException e) {
-            System.out.println("File not found: " + fileName);
-
+            stringBuilder.append("File not found: ").append(fileName);
+            printLog(stringBuilder, log);
         }
         if (count > 0) {
-            System.out.printf("%d cards have been loaded.%n", count);
+            stringBuilder.append(count).append(" cards have been loaded.");
+            printLog(stringBuilder, log);
         }
+    }
+
+    private void saveLog() {
+        String fileName;
+        System.out.println("File name:");
+        fileName = scanner.nextLine();
+        File file = new File(fileName);
+        try (PrintWriter printWriter = new PrintWriter(file)) {
+            for (String entry : log) {
+                printWriter.println(entry);
+            }
+        } catch (IOException e) {
+            System.out.printf("ERROR: An exception occurs %s", e.getMessage());
+        }
+        System.out.printf("The log has been saved.%n");
+    }
+
+    public void printLog(StringBuilder stringBuilder, ArrayList<String> log){
+        System.out.println(stringBuilder);
+        log.add(stringBuilder.toString());
+        stringBuilder.delete(0,stringBuilder.length());
     }
 }
