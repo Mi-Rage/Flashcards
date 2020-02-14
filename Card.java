@@ -9,52 +9,61 @@ import java.util.*;
 
 
 public class Card {
-    private Map<String, String> cards = new TreeMap<>();
-    private Map<String, Integer> errors = new TreeMap<>();
-    private ArrayList<String> log = new ArrayList<>();
+    private Map<String, String> cards = new TreeMap<>();    //Here we store cards of the term:definition type
+    private Map<String, Integer> errors = new TreeMap<>();  //Here we store cards of the term:errors type
+    private ArrayList<String> log = new ArrayList<>();      //Here we store the log of all messages in the console
     StringBuilder stringBuilder = new StringBuilder();
     Scanner scanner = new Scanner(System.in);
 
 
-    public void playGame() {
+    public void playGame(String fileImport, String fileExport) {
+        // Was there an import file in the arguments? Upload it.
         String action;
+        if(fileImport != null) {
+            importCard(fileImport);
+        }
+        // Main menu
         do {
             printLog("Input the action (add, remove, import, export, ask, log, hardest card, reset stats, exit):");
             action = scanner.next();
             log.add(action);
             scanner.nextLine();
             switch (action) {
-                case "add":
+                case "add":       //Add a card
                     addCard();
                     break;
-                case "remove":
+                case "remove":    //Remove a card
                     removeCard();
                     break;
-                case "import":
+                case "import":    //Load cars from *.txt file
                     importCard();
                     break;
-                case "export":
+                case "export":    //Save created cards in *.txt file
                     exportCard();
                     break;
-                case "ask":
+                case "ask":       //Random survey based on available cards
                     gamePlay();
                     break;
-                case "log":
+                case "log":       //Save everything in the console to a log file
                     saveLog();
                     break;
-                case "hardest":
+                case "hardest":   //Let's look at the cards with the maximum number of errors in the answers
                     hardestCard();
                     break;
-                case "reset":
+                case "reset":     //Reset statistic of hardest cards
                     resetStats();
                     break;
 
             }
-        } while (!action.equals("exit"));
+        } while (!action.equals("exit"));   //Was there a file for export in the arguments? When you exit, we will save all the cards.
         System.out.println("Bye bye!");
+        if(fileExport != null) {
+            exportCard(fileExport);
+        }
+
     }
 
-
+    //Creating cards to check whether there are already such term and definition
     public void addCard() {
         String term;
         String definition;
@@ -78,6 +87,7 @@ public class Card {
         printLog("The pair (\"" + term + "\":\"" + definition + "\") has been added.");
     }
 
+    //Delete the selected term card and its error statistics
     public void removeCard() {
         String term;
         printLog("The card:");
@@ -113,7 +123,7 @@ public class Card {
         return null;
     }
 
-
+    //Answers to random cards.
     public void gamePlay() {
         String answer;
         String randomKey;
@@ -155,12 +165,19 @@ public class Card {
         }
     }
 
+    //Save the cards to the specified file
     public void exportCard() {
         String fileName;
         printLog("File name:");
         fileName = scanner.nextLine();
         log.add(fileName);
-        File file = new File(fileName);
+        exportCard(fileName);
+    }
+
+    //Save the cards to the arguments file
+    public void exportCard(String fileExport) {
+
+        File file = new File(fileExport);
         try (PrintWriter printWriter = new PrintWriter(file)) {
             for (Map.Entry<String, String> entry : cards.entrySet()) {
                 printWriter.println(entry.getKey());
@@ -173,18 +190,28 @@ public class Card {
         printLog(cards.size() + " cards have been saved.");
     }
 
+
+    //Load the cards from the specified file
     public void importCard() {
+
         String fileName;
-        String term;
-        String definition;
-        int error;
 
         printLog("File name:");
         fileName = scanner.nextLine();
         log.add(fileName);
-        File file = new File(fileName);
+        importCard(fileName);
+
+    }
+
+    //Load the cards from the arguments file
+    public void importCard(String fileImport) {
+
+        String term;
+        String definition;
+        int error;
         int count = 0;
 
+        File file = new File(fileImport);
         try (Scanner scanner = new Scanner(file)) {
             while (scanner.hasNext()) {
                 term = scanner.nextLine();
@@ -195,23 +222,24 @@ public class Card {
                 count++;
             }
         } catch (FileNotFoundException e) {
-            printLog("File not found: " + fileName);
+            printLog("File not found: " + fileImport);
         }
         if (count > 0) {
             printLog(count + " cards have been loaded.");
         }
     }
 
+    //Let's show the cards with the maximum errors in the answers
     private void hardestCard() {
         int maxError = 0;
         int maxErrorCount = 0;
         stringBuilder.append("The hardest card is ");
-        for (var entry : errors.entrySet()) {
+        for (Map.Entry<String, Integer> entry : errors.entrySet()) {
             if (entry.getValue() > 0) {
                 maxError = (maxError < entry.getValue()) ? entry.getValue() : maxError;
             }
         }
-        for (var entry : errors.entrySet()) {
+        for (Map.Entry<String, Integer> entry : errors.entrySet()) {
             if (entry.getValue() > 0) {
                 if (entry.getValue() == maxError) {
                     stringBuilder.append("\"").append(entry.getKey()).append("\"").append(",");
@@ -234,6 +262,7 @@ public class Card {
         stringBuilder.delete(0,stringBuilder.length());
     }
 
+    //Save everything in the console to a log file
     private void saveLog() {
         String fileName;
         printLog("File name:");
@@ -250,11 +279,13 @@ public class Card {
         System.out.printf("The log has been saved.%n");
     }
 
+    //Output the string to the console and copy it to the log buffer
     public void printLog(String str) {
         System.out.println(str);
         log.add(str);
     }
 
+    //Delete all statistics on erorrs cards
     public void resetStats(){
         errors.replaceAll((k, v) -> 0);
         printLog("Card statistics has been reset.");
